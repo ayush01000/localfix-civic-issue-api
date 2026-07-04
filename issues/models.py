@@ -69,12 +69,14 @@ class Issue(models.Model):
     )
 
     location_text = models.CharField(max_length=255)
+
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
         blank=True,
         null=True
     )
+
     longitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -89,7 +91,11 @@ class Issue(models.Model):
     )
 
     resolution_note = models.TextField(blank=True, null=True)
-    resolved_at = models.DateTimeField(blank=True, null=True)
+
+    resolved_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -99,3 +105,60 @@ class Issue(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.status}"
+
+
+class IssueComment(models.Model):
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='issue_comments'
+    )
+
+    message = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Comment by {self.author.email} on {self.issue.title}"
+
+
+class IssueStatusHistory(models.Model):
+    issue = models.ForeignKey(
+        Issue,
+        on_delete=models.CASCADE,
+        related_name='status_history'
+    )
+
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='status_changes'
+    )
+
+    previous_status = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True
+    )
+
+    new_status = models.CharField(max_length=20)
+
+    note = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.issue.title}: {self.previous_status} → {self.new_status}"
